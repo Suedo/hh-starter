@@ -6,9 +6,11 @@ contract Crud {
         uint256 id;
         string name;
     }
-    User[] public users;
 
+    User[] public users;
     uint256 public nextId = 1;
+
+    error CRUD__UserNotFound(uint256 id);
 
     function createUser(string memory name) public {
         users.push(User(nextId, name));
@@ -35,6 +37,6 @@ contract Crud {
         for (uint256 i = 0; i < users.length; i++) {
             if (users[i].id == id) return i;
         }
-        revert("User does not exist");
+        revert CRUD__UserNotFound(id);
     }
 }
