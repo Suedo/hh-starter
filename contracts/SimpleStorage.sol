@@ -2,9 +2,9 @@
 pragma solidity ^0.8.9;
 
 contract SimpleStorage {
-  string public data;
+    string public data;
 
-  function setData(string calldata _data) external {
-    data = _data;
-  }
+    function setData(string calldata _data) external {
+        data = _data;
+    }
 }
