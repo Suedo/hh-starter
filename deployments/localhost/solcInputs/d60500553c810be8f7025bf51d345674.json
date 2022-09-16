@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/CrowdFundingWithDeadline.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\npragma solidity ^0.8.9;\n\ncontract CrowdFundingWithDeadline {\n    enum Status {\n        Ongoing,\n        Failed,\n        Succeeded,\n        PaidOut\n    } // internally recorded as 0,1,2,3\n\n    string public name;\n    uint256 public targetAmount;\n    uint256 public fundingDeadline;\n    address payable public beneficiary;\n    Status public status;\n    mapping(address => uint256) amounts;\n    uint256 public totalCollected;\n    bool public collected;\n\n    modifier inState(Status expectedStatus) {\n        require(status == expectedStatus, \"Invalid State\");\n        _;\n    }\n\n    function contribute() public payable inState(Status.Ongoing) {\n        amounts[msg.sender] += msg.value;\n        totalCollected += msg.value;\n\n        if (totalCollected >= targetAmount) {\n            collected = true;\n        }\n    }\n\n    function isClosed() public view returns (bool) {\n        return block.timestamp > fundingDeadline || status != Status.Ongoing;\n    }\n\n    function tryClosing() public returns (bool) {\n        require(totalCollected >= targetAmount, \"Amount not met\");\n        require(block.timestamp > fundingDeadline, \"Time left\");\n        status = Status.Succeeded;\n        return true;\n    }\n\n    constructor(\n        string memory _contractName,\n        uint256 _targetAmountEth,\n        uint256 _durationInMin,\n        address payable _beneficiary\n    ) {\n        name = _contractName;\n        targetAmount = _targetAmountEth * 1 ether; // convert ether to wei, and save as wei\n        fundingDeadline = block.timestamp + (_durationInMin * 1 minutes);\n        beneficiary = payable(_beneficiary);\n        status = Status.Ongoing;\n    }\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}

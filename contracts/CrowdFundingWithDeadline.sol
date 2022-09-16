@@ -12,7 +12,7 @@ contract CrowdFundingWithDeadline {
     string public name;
     uint256 public targetAmount;
     uint256 public fundingDeadline;
-    address public beneficiary;
+    address payable public beneficiary;
     Status public status;
     mapping(address => uint256) amounts;
     uint256 public totalCollected;
@@ -52,7 +52,7 @@ contract CrowdFundingWithDeadline {
         name = _contractName;
         targetAmount = _targetAmountEth * 1 ether; // convert ether to wei, and save as wei
         fundingDeadline = block.timestamp + (_durationInMin * 1 minutes);
-        beneficiary = _beneficiary;
+        beneficiary = payable(_beneficiary);
         status = Status.Ongoing;
     }
 }
