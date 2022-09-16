@@ -1,6 +1,7 @@
-import {ethers} from "hardhat";
+import {HardhatRuntimeEnvironment} from "hardhat/types";
 
-async function main() {
+module.exports = async (hre: HardhatRuntimeEnvironment) => {
+    const {ethers, getNamedAccounts, deployments} = hre;
     const currentTimestampInSeconds = Math.round(Date.now() / 1000);
     const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
     const unlockTime = currentTimestampInSeconds + ONE_YEAR_IN_SECS;
@@ -13,16 +14,4 @@ async function main() {
     await lock.deployed();
 
     console.log(`Lock with 1 ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`);
-}
-
-function getSelector(func) {
-    const abiInterface = new ethers.utils.Interface([func]);
-    return abiInterface.getSighash(ethers.utils.Fragment.from(func));
-}
-
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-});
+};
