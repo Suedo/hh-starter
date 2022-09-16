@@ -11,7 +11,7 @@ contract Lottery {
     event Selection(uint256 blocktime, uint256 playerCount, uint256 result);
 
     constructor() {
-        owner = msg.sender;
+        owner = payable(msg.sender);
     }
 
     modifier isOwner() {
@@ -24,7 +24,7 @@ contract Lottery {
         uint256 idx = findPlayerIndex(msg.sender);
         if (idx == 999) {
             require(players.length < 4, "Maximum 4 players allowed");
-            players.push(msg.sender); // new player
+            players.push(payable(msg.sender)); // new player
         }
         emit Received(msg.sender, msg.value, totalAmount);
     }
