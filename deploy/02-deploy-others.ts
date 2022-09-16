@@ -10,6 +10,8 @@ module.exports = async (hre: HardhatRuntimeEnvironment) => {
     log("-".repeat(80));
     log("Deploying contracts...");
 
+    // here we deploy in hardhat-deploy-ethers induced style
+    // benefit being, deployments will be kept track of in tests as well
     const crud = await deploy("Crud", {from: deployer});
     log(`Crud deployed at ${crud.address}`);
 

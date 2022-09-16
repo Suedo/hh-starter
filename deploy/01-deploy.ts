@@ -1,5 +1,8 @@
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 
+/**
+ * hre: HardhatRuntimeEnvironment is injected by hardhat-deploy
+ */
 module.exports = async (hre: HardhatRuntimeEnvironment) => {
     const {ethers, getNamedAccounts, deployments} = hre;
     const currentTimestampInSeconds = Math.round(Date.now() / 1000);
@@ -8,6 +11,7 @@ module.exports = async (hre: HardhatRuntimeEnvironment) => {
 
     const lockedAmount = ethers.utils.parseEther("1");
 
+    // here we deploy in vanilla hardhat style
     const Lock = await ethers.getContractFactory("Lock");
     const lock = await Lock.deploy(unlockTime, {value: lockedAmount});
 
