@@ -1,10 +1,18 @@
 import {assert, expect} from "chai";
+import {BigNumber} from "ethers";
 import {network, deployments, ethers, getNamedAccounts} from "hardhat";
 import {Crud} from "../typechain-types/contracts/Crud";
 
 describe("Crud", () => {
     let crud: Crud;
     let deployer;
+
+    // this maps solidity enum ChangeType
+    let ChangeType = {
+        Create: 0,
+        Update: 1,
+        Delete: 2,
+    };
     // const sendValue = ethers.utils.parseEther("1");
     beforeEach(async () => {
         // const accounts = await ethers.getSigners()
@@ -15,11 +23,11 @@ describe("Crud", () => {
     });
 
     it("should create a new user with id 1", async () => {
-        // arrange
-        await crud.createUser("luffy");
-        // act
+        const tx = await crud.createUser("luffy");
         const user = await crud.findUserById(1);
-        // assert
+
+        await expect(tx).to.emit(crud, "StateChanged").withArgs(1, "luffy", ChangeType.Create);
+
         assert.equal(1, user[0].toNumber());
         assert.equal("luffy", user[1]);
     });
@@ -36,7 +44,18 @@ describe("Crud", () => {
     it("should revert when trying to update non-existing record", async () => {
         await expect(crud.updateUser(2, "Robin")).to.be.revertedWithCustomError(crud, "CRUD__UserNotFound");
     });
+
+    it("should emit event when deleted", async () => {
+        await crud.createUser("luffy");
+        await expect(await crud.deleteUserById(1))
+            .to.emit(crud, "StateChanged")
+            .withArgs(1, "luffy", ChangeType.Delete);
+    });
 });
 
 // https://eduardowronscki.hashnode.dev/how-to-write-type-safe-tests-for-your-solidity-smart-contracts-with-typescript-and-typechain#heading-adding-typechain
+
+// command to execute test:
 // hardhat test test/Crud.ts
+// hardhat test test/Crud.ts --grep "create a new user with id 1" // to run a test by its name
+// https://youtu.be/gyMwXuJrbJQ?t=42201

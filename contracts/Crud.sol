@@ -10,10 +10,19 @@ contract Crud {
     User[] public users;
     uint256 public nextId = 1;
 
+    enum ChangeType {
+        Create,
+        Update,
+        Delete
+    }
+
+    event StateChanged(uint256 id, string name, ChangeType changeType);
+
     error CRUD__UserNotFound(uint256 id);
 
     function createUser(string memory name) public {
         users.push(User(nextId, name));
+        emit StateChanged(nextId, name, ChangeType.Create);
         nextId++;
     }
 
@@ -26,11 +35,14 @@ contract Crud {
     function updateUser(uint256 id, string memory name) public {
         uint256 i = findUserIndex(id);
         users[i].name = name;
+        emit StateChanged(i, name, ChangeType.Update);
     }
 
     function deleteUserById(uint256 id) public {
         uint256 i = findUserIndex(id);
+        string memory deletedName = users[i].name;
         delete users[i];
+        emit StateChanged(id, deletedName, ChangeType.Delete);
     }
 
     function findUserIndex(uint256 id) internal view returns (uint256) {
