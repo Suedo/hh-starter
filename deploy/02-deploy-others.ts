@@ -6,6 +6,7 @@ module.exports = async (hre: HardhatRuntimeEnvironment) => {
     const {deployer} = await getNamedAccounts();
 
     const deployArgs = {from: deployer, log: true, waitConfirmations: 1};
+    const raffleEntranceFee = ethers.utils.parseUnits("1.0", "gwei");
 
     log("-".repeat(80));
     log("Deploying contracts...");
@@ -28,6 +29,12 @@ module.exports = async (hre: HardhatRuntimeEnvironment) => {
         args: ["funding", 1, 10, accounts[1].address],
     });
     log(`CrowdFundingWithDeadline deployed at ${crowdFundingWithDeadline.address}`);
+
+    const raffle = await deploy("Raffle", {
+        ...deployArgs,
+        args: [raffleEntranceFee],
+    });
+    log(`Raffle deployed at ${raffle.address}`);
 };
 
 module.exports.tags = ["all", "old"];
