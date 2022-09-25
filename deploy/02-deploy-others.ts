@@ -29,12 +29,6 @@ module.exports = async (hre: HardhatRuntimeEnvironment) => {
         args: ["funding", 1, 10, accounts[1].address],
     });
     log(`CrowdFundingWithDeadline deployed at ${crowdFundingWithDeadline.address}`);
-
-    const raffle = await deploy("Raffle", {
-        ...deployArgs,
-        args: [raffleEntranceFee],
-    });
-    log(`Raffle deployed at ${raffle.address}`);
 };
 
 module.exports.tags = ["all", "old"];
