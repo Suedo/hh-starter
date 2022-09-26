@@ -22,12 +22,13 @@ describe("Raffle", () => {
         accounts = await ethers.getSigners();
         player1 = accounts[1];
         deployer = (await getNamedAccounts()).deployer;
-        //console.log(`Before each test, get the Raffle contract...`);
+        console.log(`Main BeforeEach...`);
         await deployments.fixture(["raffle", "mocks"]);
         raffle = await ethers.getContract("Raffle", deployer);
         chainId = network.config.chainId || 31337;
         entranceFee = networkConfig[chainId].raffleEntranceFee;
         interval = networkConfig[chainId].keepersUpdateInterval;
+        //console.log("-".repeat(80));
     });
 
     /* increase BC timestamp, and then mine a block to persist it for BC participants to be able to see */
@@ -55,7 +56,6 @@ describe("Raffle", () => {
         });
         it("should revert when not enough fee provided", async () => {
             let fee = entranceFee.sub(1);
-            console.log("Connecting with player 1");
 
             const tx = raffle.connect(player1).enterRaffle({value: fee});
             await expect(tx).to.be.revertedWithCustomError(raffle, "Raffle__entranceFeeNotMet");
@@ -63,11 +63,15 @@ describe("Raffle", () => {
     });
 
     describe("CheckUpkeep", () => {
+        beforeEach(async () => {
+            console.log(`CheckUpkeep beforeEach..`);
+        });
         it("should fail when no players", async () => {
             await increaseTime(interval + 1);
             const playerCount = await raffle.getNumberOfPlayers();
 
             assert.equal(0, playerCount.toNumber());
+            // callStatic: prevent state change, and return the result
             const {upkeepNeeded} = await raffle.callStatic.checkUpkeep("0x"); // upkeepNeeded = (timePassed && isOpen && hasBalance && hasPlayers)
             assert(!upkeepNeeded);
         });
@@ -102,8 +106,24 @@ describe("Raffle", () => {
             await increaseTime(interval + 5);
 
             const {upkeepNeeded} = await raffle.callStatic.checkUpkeep("0x"); // upkeepNeeded = (timePassed && isOpen && hasBalance && hasPlayers)
-            console.log(`UpkeepNeeded: ${upkeepNeeded}`);
             assert(upkeepNeeded); // players + funds present, time also passed, hence should pass
+        });
+    });
+
+    describe("Perform Upkeep", () => {
+        it("should revert if checkUpkeep returns false", async () => {
+            const tx = raffle.performUpkeep("0x");
+            await expect(tx).to.be.revertedWithCustomError(raffle, "Raffle__UpkeepNotNeeded");
+        });
+
+        it("should run if checkUpkeep returns true", async () => {
+            await raffle.connect(player1).enterRaffle({value: entranceFee.add(1)});
+            await increaseTime(interval + 5);
+            const tx = raffle.performUpkeep("0x");
+
+            await expect(tx).to.emit(raffle, "RequestedRaffleWinner");
+            const state = await raffle.getRaffleState();
+            assert.equal(state, RaffleState.CALCULATING);
         });
     });
 });
