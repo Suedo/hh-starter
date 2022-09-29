@@ -3,6 +3,9 @@ pragma solidity ^0.8.9;
 
 import "hardhat/console.sol";
 
+error DelegateCallOnEmptyContract();
+error NoCalldataSpecified();
+
 // NOTE: Deploy this contract first, because u need it's address below
 contract Tester {
     // NOTE: storage layout must be the same as contract A
@@ -32,9 +35,31 @@ contract Caller {
     function setVars(address _contract, uint256 _num) public payable {
         console.log("Caller: Call contract at %s passing number: %s", _contract, _num);
         // A's storage is set, B is not modified.
-        (bool success, bytes memory data) = _contract.delegatecall(abi.encodeWithSignature("setVars(uint256)", _num));
+        (bool success, bytes memory error) = _contract.delegatecall(abi.encodeWithSignature("setVars(uint256)", _num));
 
         emit CallerEvent(success, _num, _contract);
+    }
+
+    function setVarsCalldata(address _contract, bytes memory _calldata) external payable {
+        console.log("Caller: call contract at %s via delegateCall with calldata", _contract);
+        if (_contract == address(0) && _calldata.length > 0) {
+            revert DelegateCallOnEmptyContract();
+        }
+        if (_contract != address(0) && _calldata.length == 0) {
+            // checkout EIP-2535 Diamond's `initializeDiamondCut` method for more pro handling
+            revert NoCalldataSpecified();
+        }
+        (bool success, bytes memory error) = _contract.delegatecall(_calldata);
+        if (!success) {
+            if (error.length > 0) {
+                // bubble up the error
+                revert(string(error));
+            } else {
+                revert("contract delegatecall reverted");
+            }
+        } else {
+            emit CallerEvent(success, 1, _contract);
+        }
     }
 }
 

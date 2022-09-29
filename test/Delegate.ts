@@ -1,5 +1,7 @@
 import {anyValue} from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import {assert, expect} from "chai";
+import {Contract} from "ethers";
+import {FunctionFragment} from "ethers/lib/utils";
 import {deployments, ethers, getNamedAccounts} from "hardhat";
 import {Caller, Tester} from "../typechain-types";
 
@@ -12,6 +14,13 @@ describe("Delegate Call", () => {
         await deployments.fixture(["examples"]);
         caller = await ethers.getContract("Caller", deployer);
         tester = await ethers.getContract("Tester", deployer);
+        console.log("-".repeat(120));
+    });
+
+    after(async () => {
+        let a = `${"-".repeat(54)} Done `;
+        let b = "-".repeat(120 - a.length);
+        console.log("\n" + a + b);
     });
 
     it("should have default values at start", async () => {
@@ -52,8 +61,8 @@ describe("Delegate Call", () => {
         const delegateCallTx = await delegateCaller.setVars(delegateCallee.address, 123, {value: val});
         const receipt = await delegateCallTx.wait();
 
-        console.log("Receipt: ");
-        console.log(receipt);
+        // console.log("Receipt: ");
+        // console.log(receipt);
 
         const eventsUnderDelegateCaller = receipt.events?.find((e) => e.address === delegateCaller.address);
 
@@ -76,5 +85,32 @@ describe("Delegate Call", () => {
         // .withArgs(123, deployer, ethers.utils.parseEther("0.01"));
         // msg.sender wrt Caller is deployer
         // Caller is delegateCalling to Tester, so event emitted at Tester will have Caller's context
+    });
+
+    it("should properly delegateCall the Callee when invoking from dapp layer directly", async () => {
+        const delegateCallee = tester;
+        const delegateCaller = caller;
+        const val = ethers.utils.parseEther("0.1");
+
+        let callerValue = await caller.value();
+        let callerNum = await caller.num();
+        const testerNum = await tester.num();
+
+        assert.equal(callerNum.toNumber(), 0, "'num' Values should be zero before execution");
+        assert.equal(callerValue.toNumber(), 0, "'value' Values should be zero before execution");
+
+        let functionToCall = delegateCallee.interface.encodeFunctionData("setVars", [42]);
+        const tx = delegateCaller.setVarsCalldata(delegateCallee.address, functionToCall, {value: val});
+        // let tx = await delegateCaller.set(cut, diamondInit.address, initFunctionCall);
+
+        await expect(tx).to.emit(delegateCaller, "CallerEvent").withArgs(anyValue, 1, delegateCallee.address);
+
+        callerValue = await caller.value();
+        callerNum = await caller.num();
+
+        // since delegateCall, Caller's state is used, and modified
+        assert.equal(callerNum.toNumber(), 42);
+        assert.equal(callerValue.toString(), val.toString()); // cannot directly compare to BigNumbers
+        assert.equal(testerNum.toNumber(), 0);
     });
 });
