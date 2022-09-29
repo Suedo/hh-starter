@@ -10,7 +10,7 @@ contract Tester {
     address public sender;
     uint256 public value;
 
-    event TesterEvent(uint256 num, address sender, uint256 value);
+    event TesterEvent(uint256 num, address delegateCaller, uint256 value);
 
     function setVars(uint256 _num) public payable {
         console.log("Tester: setting values %s, %s, %s", _num, msg.sender, msg.value);
